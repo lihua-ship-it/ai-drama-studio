@@ -1,15 +1,19 @@
 {
-  "buildCommand": "npm install && npm run db:generate && npm run db:migrate:deploy && npm run build",
-  "outputDirectory": "client/dist",
-  "functions": {
-    "api/index.mjs": {
-      "maxDuration": 300
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "client": {
+      "root": "client",
+      "framework": "vite"
+    },
+    "server": {
+      "root": "server",
+      "framework": "express",
+      "buildCommand": "npm run prisma:generate && npm run prisma:deploy"
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/uploads/(.*)", "destination": "/api/index" },
-    { "source": "/uploads", "destination": "/api/index" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/api/(.*)", "destination": { "service": "server" } },
+    { "source": "/uploads/(.*)", "destination": { "service": "server" } },
+    { "source": "/(.*)", "destination": { "service": "client" } }
   ]
 }
