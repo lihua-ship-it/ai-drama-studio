@@ -16,10 +16,13 @@
     "@prisma/client": "^6.19.0",
     "@vercel/blob": "^1.0.0",
     "dotenv": "^16.6.1",
+    "edge-tts": "^1.0.1",
     "express": "^4.21.2"
   },
   "devDependencies": {
     "prisma": "^6.19.0"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

@@ -97,14 +97,14 @@ export async function generateShotImage(shotId) {
 export async function createShotVideo(shotId) {
   const shot = await prisma.shot.findUnique({ where: { id: shotId }, include: { project: true, episode: true, scene: true } });
   if (!shot) throw new AppError('镜头不存在', 404, 'NOT_FOUND');
-  if (!shot.imagePath) throw new AppError('请先生成关键帧', 409, 'KEYFRAME_REQUIRED');
   const active = await prisma.aiTask.findFirst({ where: { projectId: shot.projectId, type: 'video', status: { in: ['queued', 'running'] }, taskId: { not: '' } } });
   if (active && active.shotId !== shotId) throw new AppError('当前已有一个 Seedance 任务运行中，请等待其完成', 409, 'VIDEO_CONCURRENCY_LIMIT');
   const characters = await prisma.character.findMany({ where: { projectId: shot.projectId } });
   const linkedCharacters = shotCharacters(shot, characters);
   const shots = await prisma.shot.findMany({ where: { projectId: shot.projectId }, include: { scene: true } });
   const previous = previousShot(shots, shot);
-  const imageUrl = await publicAssetUrl(previous?.lastFramePath || shot.imagePath);
+  const imageReference = previous?.lastFramePath || shot.imagePath;
+  const imageUrl = imageReference ? await publicAssetUrl(imageReference) : '';
   const lastFrameUrl = shot.lastFramePath ? await publicAssetUrl(shot.lastFramePath) : '';
   const remote = await seedance.createVideoTask({
     imageUrl, lastFrameUrl,

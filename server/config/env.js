@@ -22,8 +22,6 @@ export const env = {
   zhipuApiKey: process.env.ZHIPU_API_KEY || '',
   zhipuImageModel: process.env.ZHIPU_IMAGE_MODEL || 'cogview-3-flash',
   zhipuVideoModel: process.env.ZHIPU_VIDEO_MODEL || 'cogvideox-flash',
-  ttsResourceId: process.env.TTS_RESOURCE_ID || '',
-  ttsUrl: process.env.VOLCENGINE_TTS_URL || 'https://openspeech.bytedance.com/api/v3/tts/unidirectional/sse',
   videoMaxPolls: Number(process.env.VIDEO_MAX_POLLS || 180),
   videoPollIntervalMs: Number(process.env.VIDEO_POLL_INTERVAL_MS || 10000),
   httpTimeoutMs: 120000,
