@@ -22,6 +22,9 @@ export const env = {
   zhipuApiKey: process.env.ZHIPU_API_KEY || '',
   zhipuImageModel: process.env.ZHIPU_IMAGE_MODEL || 'cogview-3-flash',
   zhipuVideoModel: process.env.ZHIPU_VIDEO_MODEL || 'cogvideox-flash',
+  // TTS 暂未接入（当前无可用免费语音服务），字段保留仅供兼容，暂不被使用
+  ttsResourceId: process.env.TTS_RESOURCE_ID || '',
+  ttsUrl: process.env.VOLCENGINE_TTS_URL || 'https://openspeech.bytedance.com/api/v3/tts/unidirectional/sse',
   videoMaxPolls: Number(process.env.VIDEO_MAX_POLLS || 180),
   videoPollIntervalMs: Number(process.env.VIDEO_POLL_INTERVAL_MS || 10000),
   httpTimeoutMs: 120000,
