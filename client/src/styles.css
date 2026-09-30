@@ -425,3 +425,49 @@ a { color: inherit; text-decoration: none; }
   .task-row { grid-template-columns: 1fr 1fr; padding: 10px 6px; }
   .task-progress { justify-content: flex-end; }
 }
+
+/* ===== Workbench（单页纵向工作流） ===== */
+.workbench-stack { display: grid; gap: 12px; max-width: 1080px; margin: 0 auto; }
+.workbench-stage { overflow: hidden; }
+.workbench-stage-head { display: flex; align-items: center; gap: 13px; width: 100%; padding: 16px 18px; color: #2c392f; text-align: left; border: 0; background: transparent; }
+.workbench-stage-head:hover { background: #f7f9f4; }
+.workbench-stage-index { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 auto; color: #b7785c; border: 1px solid #dfe5dc; border-radius: 50%; font: 11px var(--mono); }
+.workbench-stage.done .workbench-stage-index { color: #f5f5eb; border-color: #65866b; background: #65866b; }
+.workbench-stage-title { flex: 1; min-width: 0; }
+.workbench-stage-title .section-kicker { display: block; }
+.workbench-stage-title strong { display: block; margin-top: 3px; color: #2a352d; font-family: var(--serif); font-size: 15px; font-weight: 600; }
+.workbench-stage-title small { display: block; margin-top: 3px; color: #8a948b; font-size: 9px; }
+.workbench-chevron { color: #9aa39a; transition: transform .18s ease; }
+.workbench-chevron.open { transform: rotate(180deg); }
+.workbench-stage-body { padding: 4px 18px 20px 61px; }
+.workbench-stage-body .section-kicker { display: block; margin-bottom: 7px; }
+.workbench-story { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.workbench-story-block { padding: 13px 14px; border: 1px solid #e6ebe3; border-radius: 5px; background: #f7f8f4; }
+.workbench-story-block p { margin: 5px 0 0; color: #566258; font-size: 10px; line-height: 1.7; }
+.workbench-character-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.character-name-tag { padding: 6px 10px; color: #48604d; border: 1px solid #cdd9cd; border-radius: 4px; background: #f6f8f3; font-size: 10px; }
+.workbench-episode-list { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.workbench-episode-list li { display: flex; align-items: center; gap: 9px; padding: 9px 11px; color: #4c5950; border-left: 2px solid #9aaf99; background: #f4f6f1; font-size: 10px; }
+.workbench-episode-list li span { color: #bd7558; font: 9px var(--mono); }
+.workbench-empty { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px; color: #818b82; border: 1px dashed #d7dfd5; border-radius: 5px; background: #fafbf7; }
+.workbench-empty p { margin: 0; font-size: 10px; }
+.workbench-toolbar { display: flex; align-items: center; gap: 11px; min-height: 48px; margin-bottom: 14px; padding: 7px 10px; border: 1px solid #e0e5dd; border-radius: 6px; background: #fafbf7; }
+.workbench-shot-select { display: flex; align-items: center; gap: 7px; padding-left: 4px; color: #829086; flex: 1; min-width: 0; }
+.workbench-shot-select select { min-width: 0; width: 100%; max-width: 340px; color: #435146; border: 0; outline: none; background: transparent; font-size: 10px; }
+.workbench-toolbar-count { margin-left: auto; color: #879187; font: 9px var(--mono); white-space: nowrap; }
+.workbench-runall-note { margin: 0 0 14px; }
+.workbench-runall-note-running { color: #7c5a2c; border: 1px solid #ead9ae; background: #fbf4e0; }
+.workbench-runall-note-done { color: #4c6b52; border: 1px solid #cddecb; background: #eef5eb; }
+.workbench-runall-note-error { color: #8b4839; border: 1px solid #e8c6b8; background: #fff6f0; }
+.workbench-final-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.workbench-final-card { overflow: hidden; }
+.workbench-final-card video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #101714; }
+.workbench-final-caption { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; color: #59665b; font-size: 9px; }
+.workbench-final-caption small { color: #889188; font: 8px var(--mono); }
+.workbench-more-note { margin-top: 10px; color: #889289; font-size: 9px; }
+@media (max-width: 560px) {
+  .workbench-stage-body { padding-left: 18px; }
+  .workbench-story, .workbench-final-grid { grid-template-columns: 1fr; }
+  .workbench-toolbar { flex-wrap: wrap; }
+  .workbench-shot-select { flex-basis: 100%; }
+}

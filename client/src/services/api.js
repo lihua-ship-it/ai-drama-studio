@@ -36,6 +36,7 @@ export const api = {
     storyboard: (projectId, data = {}) => post(`/projects/${projectId}/storyboard`, data),
     imagePrompts: (projectId, data = {}) => post(`/projects/${projectId}/image-prompts`, data),
     queue: (projectId, types) => post(`/projects/${projectId}/assets/queue`, { types }),
+    runAll: (projectId, types) => post(`/projects/${projectId}/assets/run-all`, { types }),
     updateCharacter: (characterId, data) => patch(`/projects/characters/${characterId}`, data),
     runTask: (taskId) => post(`/projects/tasks/${taskId}/run`),
     retryTask: (taskId) => post(`/projects/tasks/${taskId}/retry`)

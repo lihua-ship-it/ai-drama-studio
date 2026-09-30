@@ -86,12 +86,11 @@ export default function ProjectPage() {
         </section>
       </div>
 
-      <div className="section-bar project-section-bar"><div><span className="section-kicker">NEXT SCENES</span><h2>制作空间</h2></div><Link to={`/storyboard/${projectId}`} className="quiet-link">打开分镜工作台 <ArrowRight size={14} /></Link></div>
+      <div className="section-bar project-section-bar"><div><span className="section-kicker">NEXT SCENES</span><h2>制作空间</h2></div><Link to={`/workbench/${projectId}`} className="quiet-link">打开工作台 <ArrowRight size={14} /></Link></div>
       <div className="workspace-links">
         <Link to={`/script/${projectId}`} className="workspace-link"><span className="workspace-link-icon"><FileText size={18} /></span><strong>剧本</strong><small>{episodes.length} 集 · {story.synopsis ? '已生成' : '待生成'}</small><ArrowRight size={15} /></Link>
         <Link to={`/characters/${projectId}`} className="workspace-link"><span className="workspace-link-icon"><Users size={18} /></span><strong>人物</strong><small>{characters.length} 位 · 参考图与音色</small><ArrowRight size={15} /></Link>
-        <Link to={`/storyboard/${projectId}`} className="workspace-link"><span className="workspace-link-icon"><Clapperboard size={18} /></span><strong>分镜</strong><small>{shots.length} 镜 · 关键帧与视频</small><ArrowRight size={15} /></Link>
-        <Link to={`/assets/${projectId}`} className="workspace-link"><span className="workspace-link-icon"><Image size={18} /></span><strong>素材队列</strong><small>图片、视频、TTS</small><ArrowRight size={15} /></Link>
+        <Link to={`/workbench/${projectId}`} className="workspace-link"><span className="workspace-link-icon"><Clapperboard size={18} /></span><strong>工作台</strong><small>{shots.length} 镜 · 分镜 · 素材 · 成片</small><ArrowRight size={15} /></Link>
       </div>
     </div>
   );

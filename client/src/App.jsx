@@ -6,9 +6,7 @@ import CreatePage from './pages/CreatePage.jsx';
 import ProjectPage from './pages/ProjectPage.jsx';
 import ScriptPage from './pages/ScriptPage.jsx';
 import CharactersPage from './pages/CharactersPage.jsx';
-import StoryboardPage from './pages/StoryboardPage.jsx';
-import AssetsPage from './pages/AssetsPage.jsx';
-import FinalPage from './pages/FinalPage.jsx';
+import WorkbenchPage from './pages/WorkbenchPage.jsx';
 
 export const ProjectContext = createContext(null);
 
@@ -29,9 +27,7 @@ export default function App() {
           <Route path="project/:projectId" element={<ProjectPage />} />
           <Route path="script/:projectId" element={<ScriptPage />} />
           <Route path="characters/:projectId" element={<CharactersPage />} />
-          <Route path="storyboard/:projectId" element={<StoryboardPage />} />
-          <Route path="assets/:projectId" element={<AssetsPage />} />
-          <Route path="final/:projectId" element={<FinalPage />} />
+          <Route path="workbench/:projectId" element={<WorkbenchPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

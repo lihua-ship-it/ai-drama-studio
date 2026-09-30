@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Aperture, Clapperboard, FileText, Film, FolderKanban, Image, Layers3, Plus, Settings2, Sparkles } from 'lucide-react';
+import { Aperture, FileText, Film, FolderKanban, Image, Plus, Settings2, Sparkles, Workflow } from 'lucide-react';
 import { api } from '../services/api.js';
 import { ProjectContext } from '../App.jsx';
 
@@ -8,9 +8,7 @@ const navigation = [
   { label: '项目', icon: FolderKanban, to: '/' },
   { label: '剧本', icon: FileText, route: 'script' },
   { label: '角色', icon: Aperture, route: 'characters' },
-  { label: '分镜', icon: Clapperboard, route: 'storyboard' },
-  { label: '素材', icon: Layers3, route: 'assets' },
-  { label: '成片', icon: Film, route: 'final' }
+  { label: '工作台', icon: Workflow, route: 'workbench' }
 ];
 
 export default function AppShell() {
@@ -62,7 +60,6 @@ export default function AppShell() {
             return (
               <NavLink key={label} to={target} className={`nav-item ${active ? 'active' : ''}`}>
                 <Icon size={17} strokeWidth={1.8} /><span>{label}</span>
-                {label === '分镜' && project?.status === 'storyboard_ready' ? <i className="nav-ready-dot" /> : null}
               </NavLink>
             );
           })}
