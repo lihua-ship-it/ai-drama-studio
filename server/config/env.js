@@ -18,6 +18,10 @@ export const env = {
   volcTextModel: process.env.VOLC_TEXT_MODEL || '',
   seedreamModel: process.env.SEEDREAM_MODEL || '',
   seedanceModel: process.env.SEEDANCE_MODEL || '',
+  // 智谱 AI（免费生图/生视频），替代火山方舟；图生视频能力在免费模型上不可用
+  zhipuApiKey: process.env.ZHIPU_API_KEY || '',
+  zhipuImageModel: process.env.ZHIPU_IMAGE_MODEL || 'cogview-3-flash',
+  zhipuVideoModel: process.env.ZHIPU_VIDEO_MODEL || 'cogvideox-flash',
   ttsResourceId: process.env.TTS_RESOURCE_ID || '',
   ttsUrl: process.env.VOLCENGINE_TTS_URL || 'https://openspeech.bytedance.com/api/v3/tts/unidirectional/sse',
   videoMaxPolls: Number(process.env.VIDEO_MAX_POLLS || 180),
@@ -41,6 +45,7 @@ export function requireConfig(name, value) {
 export function aiConfigStatus() {
   return {
     deepseek: Boolean(env.deepseekApiKey),
-    volcengine: Boolean(env.volcengineApiKey)
+    volcengine: Boolean(env.volcengineApiKey),
+    zhipu: Boolean(env.zhipuApiKey)
   };
 }

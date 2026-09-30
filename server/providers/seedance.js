@@ -2,36 +2,45 @@ import { env, requireConfig } from '../config/env.js';
 import { requestJson } from '../utils/http.js';
 import { AppError } from '../utils/AppError.js';
 
+// 智谱 CogVideoX 生视频接口地址
+const ZHIPU_VIDEO_CREATE_URL = 'https://open.bigmodel.cn/api/paas/v4/videos/generations';
+const ZHIPU_VIDEO_QUERY_URL = 'https://open.bigmodel.cn/api/paas/v4/async-result';
+
+// 智谱 task_status -> 内部 status 映射（PROCESSING/SUCCESS/FAIL）
+function mapStatus(taskStatus) {
+  if (taskStatus === 'SUCCESS') return 'succeeded';
+  if (taskStatus === 'FAIL') return 'failed';
+  return 'running';
+}
+
 export async function createVideoTask({ imageUrl, lastFrameUrl, prompt, duration = 5, aspectRatio = '16:9' }) {
-  if (!imageUrl || !prompt || prompt.length > env.maxPromptLength) throw new AppError('Seedance 首帧或 Prompt 无效', 400, 'INVALID_ARGUMENT');
-  const key = requireConfig('VOLCENGINE_API_KEY', env.volcengineApiKey);
-  const model = requireConfig('SEEDANCE_MODEL', env.seedanceModel);
-  const content = [
-    { type: 'text', text: prompt },
-    { type: 'image_url', image_url: { url: imageUrl }, role: 'first_frame' }
-  ];
-  if (lastFrameUrl) content.push({ type: 'image_url', image_url: { url: lastFrameUrl }, role: 'last_frame' });
-  const result = await requestJson(`${env.arkBaseUrl}/contents/generations/tasks`, {
+  // 智谱 cogvideox-flash 为文生视频，不支持 imageUrl/lastFrameUrl 首尾帧，忽略这些参数只用 prompt
+  if (!prompt || prompt.length > env.maxPromptLength) throw new AppError('视频 Prompt 为空或过长', 400, 'INVALID_ARGUMENT');
+  const key = requireConfig('ZHIPU_API_KEY', env.zhipuApiKey);
+  const model = requireConfig('ZHIPU_VIDEO_MODEL', env.zhipuVideoModel);
+  const result = await requestJson(ZHIPU_VIDEO_CREATE_URL, {
     method: 'POST', timeout: 60000, code: 'SEEDANCE_CREATE_FAILED',
-    headers: { Authorization: `Bearer ${key}` },
-    body: { model, content, duration: Math.max(3, Math.min(15, Number(duration) || 5)), ratio: aspectRatio, return_last_frame: true, watermark: false }
+    headers: { Authorization: `Bearer ${key}` }, body: { model, prompt }
   });
   const taskId = result.id || result.task_id;
-  if (!taskId) throw new AppError('Seedance 未返回真实 task_id', 502, 'SEEDANCE_CREATE_FAILED');
-  return { taskId, status: result.status || 'queued' };
+  if (!taskId) throw new AppError('CogVideoX 未返回真实 task_id', 502, 'SEEDANCE_CREATE_FAILED');
+  return { taskId, status: mapStatus(result.task_status) };
 }
 
 export async function getVideoTask(taskId) {
-  if (!taskId) throw new AppError('缺少真实 Seedance task_id', 400, 'INVALID_ARGUMENT');
-  const key = requireConfig('VOLCENGINE_API_KEY', env.volcengineApiKey);
-  const result = await requestJson(`${env.arkBaseUrl}/contents/generations/tasks/${encodeURIComponent(taskId)}`, {
+  if (!taskId) throw new AppError('缺少真实 CogVideoX task_id', 400, 'INVALID_ARGUMENT');
+  const key = requireConfig('ZHIPU_API_KEY', env.zhipuApiKey);
+  const result = await requestJson(`${ZHIPU_VIDEO_QUERY_URL}/${encodeURIComponent(taskId)}`, {
     timeout: 30000, code: 'SEEDANCE_TASK_FAILED', headers: { Authorization: `Bearer ${key}` }
   });
+  const status = mapStatus(result.task_status);
+  const videoUrl = result.video_result?.[0]?.url || '';
   return {
-    status: result.status,
-    progress: result.progress,
-    videoUrl: result.content?.video_url || result.video_url || result.output?.video_url || '',
-    lastFrameUrl: result.content?.last_frame_url || result.last_frame_url || result.output?.last_frame_url || '',
+    status,
+    progress: status === 'succeeded' ? 100 : 0,
+    videoUrl,
+    // 智谱 flash 不返回尾帧图，固定置空
+    lastFrameUrl: '',
     error: result.error?.message || result.error || ''
   };
 }

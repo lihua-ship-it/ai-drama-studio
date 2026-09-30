@@ -3,21 +3,22 @@ import { requestJson } from '../utils/http.js';
 import { AppError } from '../utils/AppError.js';
 import { saveRemote, saveBuffer } from '../services/storageService.js';
 
+// 智谱 CogView 生图接口地址
+const ZHIPU_IMAGE_URL = 'https://open.bigmodel.cn/api/paas/v4/images/generations';
+
 export async function generateImage({ projectId, prompt, references = [], kind, ownerId }) {
   if (!prompt || prompt.length > env.maxPromptLength) throw new AppError('图片 Prompt 为空或过长', 400, 'INVALID_ARGUMENT');
-  const key = requireConfig('VOLCENGINE_API_KEY', env.volcengineApiKey);
-  const model = requireConfig('SEEDREAM_MODEL', env.seedreamModel);
-  const imageUrls = references.filter(Boolean).slice(0, 10);
-  const body = { model, prompt, size: '2K', response_format: 'url', watermark: false };
-  if (imageUrls.length) body.image = imageUrls.length === 1 ? imageUrls[0] : imageUrls;
-  const result = await requestJson(`${env.arkBaseUrl}/images/generations`, {
+  // 智谱生图不支持参考图/尺寸/水印等火山特有参数，references 仅保留签名向后兼容、不参与请求体
+  const key = requireConfig('ZHIPU_API_KEY', env.zhipuApiKey);
+  const model = requireConfig('ZHIPU_IMAGE_MODEL', env.zhipuImageModel);
+  const result = await requestJson(ZHIPU_IMAGE_URL, {
     method: 'POST', timeout: env.httpTimeoutMs, code: 'SEEDREAM_FAILED',
-    headers: { Authorization: `Bearer ${key}` }, body
+    headers: { Authorization: `Bearer ${key}` }, body: { model, prompt }
   });
   const image = result.data?.[0];
   if (image?.url) return saveRemote(kind || 'images', projectId, image.url, 'png');
   if (image?.b64_json) return saveBuffer(kind || 'images', projectId, Buffer.from(image.b64_json, 'base64'), 'image/png', 'png');
-  throw new AppError('Seedream 响应中没有图片内容', 502, 'SEEDREAM_FAILED', JSON.stringify(result).slice(0, 500));
+  throw new AppError('CogView 响应中没有图片内容', 502, 'SEEDREAM_FAILED', JSON.stringify(result).slice(0, 500));
 }
 
 export const generateCharacterImage = (input) => generateImage({ ...input, kind: 'images' });
