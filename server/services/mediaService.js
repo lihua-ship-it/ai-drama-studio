@@ -223,7 +223,7 @@ export async function startAssetQueue(projectId, types = ['images', 'videos', 's
       const task = await enqueue(projectId, 'shot_image', shot.id, null);
       if (task) queued.push(task);
     }
-    if (types.includes('videos') && shot.imagePath && !shot.videoPath) {
+    if (types.includes('videos') && !shot.videoPath) {
       const task = await enqueue(projectId, 'video', shot.id, null);
       if (task) queued.push(task);
     }
@@ -278,4 +278,30 @@ export async function regenerateShotPrompt(shotId) {
   const shot = await prisma.shot.findUnique({ where: { id: shotId }, include: { episode: true } });
   if (!shot) throw new AppError('镜头不存在', 404, 'NOT_FOUND');
   return shot;
+}
+
+/**
+ * 串行执行项目素材队列中的全部任务（一键生成）。
+ * 先入队，再逐个 await 执行；单个任务失败不中断整体。
+ * 注意：视频任务仅创建远程任务并立即标记 succeeded，生成结果由轮询异步完成。
+ * @param {string} projectId 项目 ID
+ * @param {string[]} types 需要生成的素材类型
+ * @returns {Promise<{total: number, succeeded: number, failed: number, results: Array<{taskId: string, type: string, status: string, error?: string}>}>}
+ */
+export async function runQueueSerially(projectId, types) {
+  const { tasks } = await startAssetQueue(projectId, types);
+  const results = [];
+  let succeeded = 0;
+  let failed = 0;
+  for (const task of tasks) {
+    try {
+      await runAssetTask(task.id);
+      succeeded += 1;
+      results.push({ taskId: task.id, type: task.type, status: 'succeeded' });
+    } catch (error) {
+      failed += 1;
+      results.push({ taskId: task.id, type: task.type, status: 'failed', error: error.code || error.message });
+    }
+  }
+  return { total: tasks.length, succeeded, failed, results };
 }
