@@ -1,10 +1,15 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // native：本地开发机（Windows）；rhel-openssl-3.0.x：Vercel / Amazon Linux 2023 构建与运行环境。
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Neon 的 Vercel 集成会自动注入直连串；迁移（migrate deploy）必须走直连，
+  // 避免 pgbouncer 池化连接导致 prepared statement 相关错误。
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model Project {

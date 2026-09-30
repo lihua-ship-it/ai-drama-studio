@@ -1,0 +1,114 @@
+classDiagram
+    direction LR
+
+    class VercelEdgeCDN {
+        <<Vercel Edge / CDN>>
+        +serveStatic(client/dist)
+        +applyRewrites(path)
+        +spaFallbackToIndexHtml()
+    }
+
+    class ServerlessFunction {
+        <<Vercel Function : api/index.mjs>>
+        +handler(req, res) void
+    }
+
+    class ExpressApp {
+        <<server/app.js>>
+        +app : Express
+        +usesJsonBody(limit=2mb)
+        +redirectUploads(path) 302
+        +errorHandler(err, req, res)
+    }
+
+    class ProjectsRouter {
+        +list()
+        +create(body)
+        +get(projectId)
+        +generateStage(projectId, stage, opts)
+        +startQueue(projectId, types) 202
+        +runTask(taskId)
+        +retryTask(taskId)
+    }
+
+    class MediaRouter {
+        +genCharacterImage(characterId)
+        +genSceneImage(sceneId)
+        +genShotImage(shotId)
+        +createVideo(shotId)
+        +videoStatus(shotId)
+        +speech(shotId, dialogueIndex)
+    }
+
+    class ProjectService {
+        +createProject(input) Project
+        +listProjects() Project[]
+        +getProjectSnapshot(id) Snapshot
+        +generateStage(projectId, stage, opts)
+        +updateCharacter(characterId, patch)
+    }
+
+    class MediaService {
+        +startAssetQueue(projectId, types)
+        +runAssetTask(taskId) AiTask
+        +getShotVideoStatus(shotId)
+        +createShotVideo(shotId)
+        +generateCharacterImage(characterId)
+        +generateShotImage(shotId)
+    }
+
+    class StorageService {
+        +saveBuffer(kind, projectId, buffer, contentType, ext) Promise
+        +saveRemote(kind, projectId, url, ext) Promise
+        +blobUrlFor(filePath) Promise~string~
+        +publicAssetUrl(filePath) Promise~string~
+        +parseJson(value, fallback)
+    }
+
+    class Providers {
+        <<DeepSeek, Seedream, Seedance, TTS>>
+        +generateStory()
+        +generateCharacters()
+        +generateScript()
+        +generateStoryboard()
+        +generateShotImage()
+        +createVideoTask()
+        +getVideoTask()
+        +generateSpeech()
+    }
+
+    class PrismaClient {
+        +project
+        +character
+        +episode
+        +scene
+        +shot
+        +asset
+        +aiTask
+    }
+
+    class NeonPostgres {
+        <<Managed Postgres (Neon)>>
+    }
+
+    class VercelBlob {
+        <<Object Storage>>
+        +put(pathname, buffer, opts)
+        +head(pathname)
+    }
+
+    VercelEdgeCDN --> ServerlessFunction : "/api/* , /uploads/*"
+    VercelEdgeCDN --> VercelBlob : "素材经 302 由浏览器直取"
+    ServerlessFunction --> ExpressApp : "app(req,res)"
+    ExpressApp --> ProjectsRouter
+    ExpressApp --> MediaRouter
+    ProjectsRouter --> ProjectService
+    MediaRouter --> MediaService
+    ProjectService --> Providers : 文本生成
+    MediaService --> Providers : 图像/视频/语音生成
+    MediaService --> StorageService : 保存/取址
+    ExpressApp --> StorageService : "/uploads/* 取 Blob 地址"
+    ProjectService --> PrismaClient
+    MediaService --> PrismaClient
+    StorageService --> VercelBlob : "put / head"
+    PrismaClient --> NeonPostgres : "SQL (pgbouncer)"

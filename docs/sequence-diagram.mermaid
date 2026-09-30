@@ -1,0 +1,89 @@
+sequenceDiagram
+    autonumber
+    actor U as 浏览器用户
+    participant CDN as Vercel CDN
+    participant FN as Serverless 函数 api/index.mjs
+    participant PS as ProjectService / MediaService
+    participant PR as Prisma Client
+    participant PG as Neon Postgres
+    participant AI as DeepSeek / Seedream / Seedance / TTS
+    participant BL as Vercel Blob
+
+    Note over U,CDN: 流程 ①　页面加载 + SPA 深链接
+    U->>CDN: GET / 或 /project/xxx
+    CDN->>CDN: 无匹配静态文件 -> rewrite 到 /index.html
+    CDN-->>U: 返回 client/dist/index.html (CDN 缓存)
+    U->>CDN: GET /assets/index-*.js, *.css
+    CDN-->>U: 静态资源
+    U->>FN: GET /api/projects (React 前端 fetch)
+    FN->>PS: listProjects()
+    PS->>PR: project.findMany()
+    PR->>PG: SELECT ...
+    PG-->>PR: rows
+    PR-->>PS: projects
+    PS-->>FN: projects
+    FN-->>U: 200 JSON
+
+    Note over U,FN: 流程 ②　文本生成（DeepSeek，最可能长耗时）
+    U->>FN: POST /api/projects/:id/story
+    FN->>PS: generateStage(id, "story")
+    PS->>PR: project.update(status=generating_story)
+    PS->>AI: DeepSeek /chat/completions (json_object)
+    AI-->>PS: 结构化 JSON
+    PS->>PR: project.update(storyJson, status=story_ready)
+    PS-->>FN: project
+    FN-->>U: 200 JSON
+    Note right of FN: maxDuration=300s；超时返回 504，前端提示改用分集生成
+
+    Note over U,BL: 流程 ③　素材队列 + 执行 + 存储（图/视频/语音）
+    U->>FN: POST /api/projects/:id/assets/queue {types}
+    FN->>PS: startAssetQueue(id, types) -> 写入 AiTask(queued)
+    PS->>PR: aiTask.create() xN
+    PS-->>FN: {queued, tasks, limits}
+    FN-->>U: 202 队列清单
+
+    loop 前端按并发限制逐个执行
+        U->>FN: POST /api/projects/tasks/:taskId/run
+        FN->>PS: runAssetTask(taskId)
+        PS->>PR: aiTask.update(queued -> running)  (原子领取)
+        PS->>AI: Seedream 生图 / TTS 合成
+        AI-->>PS: 结果 URL / 音频
+        PS->>BL: saveBuffer -> put("media/<path>", access=public)
+        BL-->>PS: { filePath, url }
+        PS->>PR: 更新 shot/character + asset.create(filePath)
+        PS-->>FN: AiTask(succeeded)
+        FN-->>U: 200 JSON
+    end
+
+    Note over U,BL: 流程 ④　视频生成（创建任务 + 前端轮询）
+    U->>FN: POST /api/shots/:id/video
+    FN->>PS: createShotVideo(id)
+    PS->>BL: blobUrlFor(首帧/参考图) -> 公网直链 (await publicAssetUrl)
+    BL-->>PS: https://*.public.blob.vercel-storage.com/...
+    PS->>AI: Seedance /contents/generations/tasks (imageUrl=Blob 直链)
+    AI-->>PS: { taskId, status }
+    PS->>PR: shot.update(videoTaskId, queued) + aiTask.create()
+    PS-->>FN: { taskId, status }
+    FN-->>U: 200 JSON
+
+    loop 前端每 10s 轮询
+        U->>FN: GET /api/shots/:id/video/status
+        FN->>PS: getShotVideoStatus(id)
+        PS->>AI: Seedance 查询任务
+        alt 任务成功
+            AI-->>PS: video_url
+            PS->>BL: saveRemote -> put 视频/尾帧
+            PS->>PR: shot.update(videoPath, succeeded)
+            PS-->>FN: {status:succeeded, videoUrl:"/uploads/<path>"}
+        else 进行中
+            PS-->>FN: {status:running, progress}
+        end
+        FN-->>U: 200 JSON
+    end
+
+    Note over U,FN: 流程 ⑤　素材展示（/uploads 302 -> Blob）
+    U->>FN: GET /uploads/images/xxx.jpg
+    FN->>BL: head("media/images/xxx.jpg")
+    BL-->>FN: blob.url
+    FN-->>U: 302 Location: https://*.blob.vercel-storage.com/...
+    U->>BL: 直接下载素材

@@ -31,7 +31,7 @@ export async function generateCharacterImage(characterId) {
   if (!character) throw new AppError('人物不存在', 404, 'NOT_FOUND');
   await prisma.character.update({ where: { id: characterId }, data: { imageStatus: 'running', imageError: '' } });
   try {
-    const references = character.referenceImagePath ? [publicAssetUrl(character.referenceImagePath)] : [];
+    const references = character.referenceImagePath ? [await publicAssetUrl(character.referenceImagePath)] : [];
     const image = await seedream.generateCharacterImage({
       projectId: character.projectId,
       prompt: characterImagePrompt(character, character.project.style),
@@ -74,9 +74,9 @@ export async function generateShotImage(shotId) {
   const linkedCharacters = shotCharacters(shot, characters);
   const previous = previousShot(shots, shot);
   const references = [];
-  for (const character of linkedCharacters) if (character.referenceImagePath) references.push(publicAssetUrl(character.referenceImagePath));
-  if (shot.scene.imagePath) references.push(publicAssetUrl(shot.scene.imagePath));
-  if (previous?.lastFramePath) references.push(publicAssetUrl(previous.lastFramePath));
+  for (const character of linkedCharacters) if (character.referenceImagePath) references.push(await publicAssetUrl(character.referenceImagePath));
+  if (shot.scene.imagePath) references.push(await publicAssetUrl(shot.scene.imagePath));
+  if (previous?.lastFramePath) references.push(await publicAssetUrl(previous.lastFramePath));
   const continuity = buildContinuity(previous, shot, linkedCharacters);
   await prisma.shot.update({ where: { id: shotId }, data: { imageStatus: 'running', imageError: '', continuityJson: JSON.stringify(continuity) } });
   try {
@@ -104,8 +104,8 @@ export async function createShotVideo(shotId) {
   const linkedCharacters = shotCharacters(shot, characters);
   const shots = await prisma.shot.findMany({ where: { projectId: shot.projectId }, include: { scene: true } });
   const previous = previousShot(shots, shot);
-  const imageUrl = publicAssetUrl(previous?.lastFramePath || shot.imagePath);
-  const lastFrameUrl = shot.lastFramePath ? publicAssetUrl(shot.lastFramePath) : '';
+  const imageUrl = await publicAssetUrl(previous?.lastFramePath || shot.imagePath);
+  const lastFrameUrl = shot.lastFramePath ? await publicAssetUrl(shot.lastFramePath) : '';
   const remote = await seedance.createVideoTask({
     imageUrl, lastFrameUrl,
     prompt: videoPrompt(shot, linkedCharacters, shot.project.style),

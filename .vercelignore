@@ -1,0 +1,18 @@
+# Vercel 上传瘦身：这些内容无需上传到构建环境（Vercel 会自行安装依赖并构建）
+node_modules
+.git
+.vercel
+
+# 本地敏感配置与本地数据库，绝不进入远端
+server/.env
+server/.env.*
+server/prisma/dev.db
+server/prisma/*.db
+server/prisma/*.db-journal
+
+# 本地构建产物与素材（前端在 Vercel 构建期重新产出；素材已迁至 Vercel Blob）
+client/dist
+server/uploads/**
+
+# 日志
+*.log

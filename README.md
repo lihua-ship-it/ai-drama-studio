@@ -1,17 +1,17 @@
 # 幕间 · AI 短剧工作台
 
-React + Vite 前端、Node.js + Express REST API、Prisma + SQLite。本地生成的图片、视频、音频分别保存在 `server/uploads/images`、`videos`、`audio`，通过 Express `/uploads` 提供播放和预览。DeepSeek、Seedream、Seedance、豆包 TTS 均由 Node 后端使用真实官方 API；浏览器不会收到任何密钥。
+React + Vite 前端、Node.js + Express REST API、Prisma + PostgreSQL（生产用 Neon）。生成的图片、视频、音频保存在 Vercel Blob；前端通过 `/uploads/*` 由后端 302 跳转到 Blob 公网地址进行预览与播放。DeepSeek、Seedream、Seedance、豆包 TTS 均由 Node 后端使用真实官方 API；浏览器不会收到任何密钥。
 
 ## 开发启动
 
 1. 安装 Node.js 20 或更新版本。
 2. 在本项目根目录运行 `npm install`。
 3. 打开 `server/.env`，填写 `DEEPSEEK_API_KEY` 和 `VOLCENGINE_API_KEY` 两把 Key，再填写真实模型 ID。火山 Key 同时用于 Seedream、Seedance 和 TTS；兼容旧 `ARK_API_KEY` / `VOLCENGINE_ARK_API_KEY` 名称，但建议只设置统一的 `VOLCENGINE_API_KEY`。
-4. 若要生成 Seedance 视频或使用人物参考图，把 `PUBLIC_BASE_URL` 配成一个指向本机 Express 3001 端口的真实 HTTPS 公网隧道/域名。方舟必须能访问传入的关键帧 URL；`localhost` 不能作为外部模型图片 URL。没有该公网地址时，文本生成和无参考图生图仍可用，Seedance 会返回 `PUBLIC_BASE_URL_MISSING`，不会伪造可访问地址。
-5. 执行 `npm run db:generate`，再执行 `npm run db:migrate -- --name init` 初始化 Prisma/SQLite。
+4. 准备一个 PostgreSQL 数据库并填入 `DATABASE_URL`（本地开发可直接复用同一个 Neon 免费库，形如 `postgresql://user:pass@host/db?sslmode=require`）；素材存储使用 Vercel Blob，本地需提供 `BLOB_READ_WRITE_TOKEN`。项目已不再使用 SQLite，`PUBLIC_BASE_URL` 已废弃。
+5. 执行 `npm run db:generate`，再执行 `npm run db:migrate:deploy` 应用 Prisma/PostgreSQL 迁移。
 6. 根目录执行 `npm run dev`：Express API 在 `http://localhost:3001`，Vite 前端在 `http://localhost:5173`，浏览器打开后者。
 
-首次连接空 SQLite 文件时，Prisma 需要运行迁移命令；迁移生成 `server/prisma/dev.db`。本地素材文件也不会提交到仓库。
+前端使用的素材地址始终是相对路径 `/uploads/*`，由后端 302 跳转到 Vercel Blob 的公网直链；数据库仅保存相对路径，不落库、不硬编码域名。
 
 ## 服务端环境变量
 
@@ -23,8 +23,8 @@ React + Vite 前端、Node.js + Express REST API、Prisma + SQLite。本地生�
 - `TTS_TEST_VOICE_ID`：可选，仅用于单句 TTS 连通性测试；正常生成仍使用人物表的 voiceId。
 - 可选 `VOLCENGINE_TTS_URL`、`VOLCENGINE_ARK_BASE_URL`、`DEEPSEEK_BASE_URL`
 - 可选 Seedance 测试输入 `SEEDANCE_TEST_IMAGE_URL`（必须是公网可访问的真实图片 URL）与 `SEEDANCE_TEST_TASK_ID`（必须是创建任务返回的真实 task_id）
-- `PUBLIC_BASE_URL`：Seedance/参考图模型访问本地静态素材所需的真实 HTTPS 公网地址
-- `DATABASE_URL`、`UPLOAD_DIR`、`PORT`、视频查询上限配置
+- `PUBLIC_BASE_URL`：**[已废弃]** 素材改为 Vercel Blob 公网直链后不再使用，可留空
+- `DATABASE_URL`、`DATABASE_URL_UNPOOLED`、`BLOB_READ_WRITE_TOKEN`、`UPLOAD_DIR`、`PORT`、视频查询上限配置（前两者在 Vercel 上由 Neon/Blob 集成自动注入）
 
 请勿把 `server/.env` 内容放到 `client/`、浏览器环境变量或响应 JSON 中。`GET /api/health` 仅返回 DeepSeek/火山 Key 是否已配置，不返回 Key 值。缺配置时服务启动日志明确打印 `DEEPSEEK_API_KEY is missing` 或 `VOLCENGINE_API_KEY is missing`。
 
@@ -65,8 +65,19 @@ Seedance 创建测试会真实产生一条至少 3 秒的视频任务并打印�
 - `POST /api/shots/:shotId/image|video|tts`
 - `GET /api/shots/:shotId/video/status`
 
-视频创建只保存 Seedance 返回的真实 `task_id`；状态页每 10 秒调用后端查询真实任务，最多 180 次。成功后后端下载模型素材到 `server/uploads` 并更新 SQLite。图片并发 2、视频并发 1、TTS 并发 1；失败任务最多自动重试 3 次，并可手动重试。
+视频创建只保存 Seedance 返回的真实 `task_id`；状态页每 10 秒调用后端查询真实任务，最多 180 次。成功后后端下载模型素材到 Vercel Blob 并更新数据库。图片并发 2、视频并发 1、TTS 并发 1；失败任务最多自动重试 3 次，并可手动重试。
 
 ## 数据与目录
 
 Prisma 表：`Project`、`Character`、`Episode`、`Scene`、`Shot`、`Asset`、`AiTask`。Prompt 位于 `server/prompts`；官方接口位于 `server/providers`；项目阶段编排与素材任务在 `server/services`；React 页面在 `client/src/pages`。
+
+## 部署到 Vercel
+
+本项目可在 **Vercel 上一次部署同时提供前端网页与 Express API**，形态为：
+
+- **静态前端**：Vite 构建产物 `client/dist`，由 Vercel CDN 托管（`outputDirectory`）。
+- **单个 Serverless 函数**：入口 `api/index.mjs`，承载整个 Express API；`/api/*` 与 `/uploads/*` 通过 `vercel.json` 的 `rewrites` 打到该函数（`maxDuration: 300`）。Vercel 会原样保留原始 path / headers / cookies，函数内直接 `app(req, res)` 即可。
+- **数据库**：Neon Postgres（Vercel Marketplace 提供），Prisma 连接；迁移在构建期由 `prisma migrate deploy` 应用。
+- **素材存储**：Vercel Blob（`@vercel/blob`）；数据库只存相对路径，对外公网地址一律经 `blobUrlFor` 获取 Blob 直链，`/uploads/*` 由后端 302 跳转，供前端预览。
+
+部署的完整逐步操作（导入仓库、建库、建 Blob、填环境变量、验证）见 **[docs/DEPLOY.md](docs/DEPLOY.md)**；架构设计与任务分解见 [docs/deploy-architecture.md](docs/deploy-architecture.md)。
