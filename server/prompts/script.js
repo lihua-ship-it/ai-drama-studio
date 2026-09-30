@@ -1,0 +1,4 @@
+export default (input) => `根据故事策划和固定人物创作完整分集剧本，只输出 JSON：{"episodes":[{"episodeNumber":1,"title":"","summary":"","endingHook":"","scenes":[{"sceneNumber":1,"location":"","time":"","atmosphere":"","description":"","dialogue":[{"characterName":"","text":"","emotion":"neutral","voiceId":"","speed":1}]}]}]}。必须恰好 ${input.episodeCount} 集，每集至少2场；每场有推进剧情的动作和对白。对白的 characterName 必须来自人物表；emotion 使用接口枚举 neutral/happy/sad/angry/surprised/fear/hate/excited/coldness/depressed/lovey-dovey/shy/comfort/tension/tender/storytelling/radio；speed 为0.5至2之间的数字。人物不可新增或改名。每集目标时长约 ${input.durationPerEpisode} 分钟，篇幅紧凑。
+故事：${JSON.stringify(input.story)}
+人物：${JSON.stringify(input.characters)}
+创作要求：${input.storyRequirements}`;

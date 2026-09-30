@@ -1,0 +1,1 @@
+export default (shot, characters, style) => `生成${shot.duration}秒的16:9连续电影镜头视频。${shot.videoPrompt}。保持首帧构图和参考图中角色外貌/服装一致；角色：${characters.map((character) => `${character.name} ${character.faceDescription} ${character.hairDescription} ${character.clothingDescription}`).join('；')}。镜头连续状态：${shot.continuityJson || ''}。风格：${style}。不要生成字幕、文字或水印。`;

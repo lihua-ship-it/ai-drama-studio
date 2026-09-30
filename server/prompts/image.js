@@ -1,0 +1,5 @@
+export const characterImagePrompt = (character, style) => `电影级角色定妆参考照，单人全身，正面自然站姿，中性纯色背景，柔和均匀棚拍光，写实质感。角色锁定：${character.faceDescription}；发型：${character.hairDescription}；体态：${character.bodyDescription}；服装：${character.clothingDescription}。视觉风格：${style}。准确呈现年龄、五官、发型、服装，不要文字、水印、其他人物。`;
+
+export const sceneImagePrompt = (scene, style) => `电影场景概念图，16:9横幅，无文字无水印。地点：${scene.location}；时间：${scene.time}；氛围：${scene.atmosphere}；环境细节：${scene.description}。视觉风格：${style}。`;
+
+export const shotImagePrompt = (shot, characters, style) => `电影关键帧，16:9横幅。${shot.imagePrompt}。${characters.map((character) => `${character.name}人物一致性锁定：${character.faceDescription}；${character.hairDescription}；${character.bodyDescription}；${character.clothingDescription}`).join('。')}。连续性：${shot.continuityJson || ''}。统一视觉风格：${style}。排除：${shot.negativePrompt || '文字、水印、错误肢体、角色外观漂移'}`;

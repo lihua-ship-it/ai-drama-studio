@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id                     String      @id @default(cuid())
+  requestKey             String?     @unique
+  title                  String
+  theme                  String
+  genre                  String      @default("都市")
+  style                  String      @default("电影级写实，16:9")
+  episodeCount           Int         @default(6)
+  durationPerEpisode     Int         @default(3)
+  characterRequirements  String      @default("")
+  storyRequirements      String      @default("")
+  logline                String      @default("")
+  synopsis               String      @default("")
+  storyJson              String      @default("{}")
+  status                 String      @default("created")
+  progressJson           String      @default("{}")
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  characters             Character[]
+  episodes               Episode[]
+  scenes                 Scene[]
+  shots                  Shot[]
+  assets                 Asset[]
+  aiTasks                AiTask[]
+
+  @@index([updatedAt])
+}
+
+model Character {
+  id                       String   @id @default(cuid())
+  projectId                String
+  name                     String
+  age                      String   @default("")
+  gender                   String   @default("")
+  identity                 String   @default("")
+  personality              String   @default("")
+  appearance               String   @default("")
+  faceDescription          String   @default("")
+  hairDescription          String   @default("")
+  bodyDescription          String   @default("")
+  clothingDescription      String   @default("")
+  voiceId                  String   @default("")
+  voiceProfile             String   @default("")
+  relationships            String   @default("")
+  imagePrompt              String   @default("")
+  referenceImagePath       String   @default("")
+  imageStatus              String   @default("idle")
+  imageError               String   @default("")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  project                  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+model Episode {
+  id                    String   @id @default(cuid())
+  projectId             String
+  episodeNumber         Int
+  title                 String   @default("")
+  summary               String   @default("")
+  endingHook            String   @default("")
+  renderTaskId          String   @default("")
+  renderStatus          String   @default("idle")
+  renderProgress        Int      @default(0)
+  renderPath            String   @default("")
+  renderError           String   @default("")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  project               Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scenes                Scene[]
+  shots                 Shot[]
+
+  @@unique([projectId, episodeNumber])
+  @@index([projectId, episodeNumber])
+}
+
+model Scene {
+  id             String   @id @default(cuid())
+  projectId      String
+  episodeId      String
+  sceneNumber    Int
+  location       String   @default("")
+  time           String   @default("")
+  atmosphere     String   @default("")
+  description    String   @default("")
+  dialogueJson   String   @default("[]")
+  imagePath      String   @default("")
+  imageStatus    String   @default("idle")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  episode        Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  shots          Shot[]
+
+  @@unique([episodeId, sceneNumber])
+  @@index([projectId, episodeId])
+}
+
+model Shot {
+  id                  String   @id @default(cuid())
+  projectId           String
+  episodeId           String
+  sceneId             String
+  shotNumber          Int
+  shotType            String   @default("")
+  cameraAngle         String   @default("")
+  cameraMovement      String   @default("")
+  duration            Int      @default(5)
+  characterIdsJson    String   @default("[]")
+  characterNamesJson  String   @default("[]")
+  action              String   @default("")
+  dialogueJson        String   @default("[]")
+  emotion             String   @default("")
+  imagePrompt         String   @default("")
+  negativePrompt      String   @default("")
+  videoPrompt         String   @default("")
+  continuityJson      String   @default("{}")
+  imagePath           String   @default("")
+  videoPath           String   @default("")
+  lastFramePath       String   @default("")
+  audioAssetsJson     String   @default("[]")
+  imageStatus         String   @default("idle")
+  imageError          String   @default("")
+  videoStatus         String   @default("idle")
+  videoTaskId         String   @default("")
+  videoProgress       Int      @default(0)
+  videoError          String   @default("")
+  audioStatus         String   @default("idle")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  project             Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  episode             Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  scene               Scene    @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+
+  @@unique([sceneId, shotNumber])
+  @@index([projectId, episodeId])
+}
+
+model Asset {
+  id             String   @id @default(cuid())
+  projectId      String
+  shotId         String   @default("")
+  type           String
+  filePath       String
+  sourceProvider String   @default("")
+  sourceTaskId   String   @default("")
+  createdAt      DateTime @default(now())
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, type])
+  @@index([shotId])
+}
+
+model AiTask {
+  id             String   @id @default(cuid())
+  projectId      String
+  shotId         String   @default("")
+  characterId    String   @default("")
+  provider       String
+  type           String
+  taskId         String   @default("")
+  status         String   @default("queued")
+  progress       Int      @default(0)
+  attempts       Int      @default(0)
+  pollCount      Int      @default(0)
+  requestJson    String   @default("{}")
+  error          String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, status])
+  @@index([shotId, type])
+}
