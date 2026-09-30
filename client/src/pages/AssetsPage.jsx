@@ -49,14 +49,12 @@ export default function AssetsPage() {
     if (queueBusy) return;
     setQueueBusy(true); setError('');
     try {
-      const queue = await api.projects.queue(projectId, ['images', 'videos', 'speech']);
+      const queue = await api.projects.queue(projectId, ['images', 'videos']);
       const imageTasks = queue.tasks.filter((task) => ['character_image', 'scene_image', 'shot_image'].includes(task.type));
       const videoTasks = queue.tasks.filter((task) => task.type === 'video');
-      const speechTasks = queue.tasks.filter((task) => task.type === 'tts');
       const groups = [
         { name: '图片生成', items: imageTasks, concurrency: 2 },
-        { name: '视频任务创建', items: videoTasks, concurrency: 1 },
-        { name: '对白配音', items: speechTasks, concurrency: 1 }
+        { name: '视频任务创建', items: videoTasks, concurrency: 1 }
       ];
       for (const group of groups) {
         if (!group.items.length) continue;
